@@ -14,8 +14,8 @@ public class GameOfLifeImpl implements GameOfLife {
     int size=0;
     int iterations=0;
 
-    Boolean[] curGen = new Boolean[0];
-    Boolean[] nextGen = new Boolean[0];
+    Boolean[][] curGen = new Boolean[0][0];
+    Boolean[][] nextGen = new Boolean[0][0];
 
     @Override
     public List<String> play(String inputFile) {
@@ -27,7 +27,7 @@ public class GameOfLifeImpl implements GameOfLife {
 
             size = Integer.parseInt(words[0]);
             iterations = Integer.parseInt(words[1]);
-            curGen = new Boolean[size*size];
+            curGen = new Boolean[size][size];
 
             int c;
             int pos = 0;
@@ -35,11 +35,11 @@ public class GameOfLifeImpl implements GameOfLife {
                 //Since c is an integer, cast it to a char. If it isn't -1, it will be in the correct range of char.
                 switch ((char)c) {
                     case '0':
-                        curGen[pos] = false;
+                        curGen[pos/size][pos%size] = false;
                         pos ++;
                         break;
                     case  '1':
-                        curGen[pos] = true;
+                        curGen[pos/size][pos%size] = true;
                         pos ++;
                         break;
                     default:
@@ -52,12 +52,12 @@ public class GameOfLifeImpl implements GameOfLife {
             e.printStackTrace();
         }
 
-//        // initialises field for drawing cells
-//        StdDraw.setCanvasSize(size, size);
-//        StdDraw.setYscale(0, size);
-//        StdDraw.setXscale(0, size);
-//        StdDraw.setPenRadius(0);
-//        StdDraw.setPenColor(StdDraw.GREEN);
+        // initialises field for drawing cells
+        StdDraw.setCanvasSize(size, size);
+        StdDraw.setYscale(0, size);
+        StdDraw.setXscale(0, size);
+        StdDraw.setPenRadius(0);
+        StdDraw.setPenColor(StdDraw.GREEN);
 
         long start = System.currentTimeMillis();
         long time = System.currentTimeMillis() - start;
@@ -66,16 +66,16 @@ public class GameOfLifeImpl implements GameOfLife {
         while (iterations>0) {
             curGen = countNextGen(size, size);
             iterations--;
-//            StdDraw.show(0);
-//            StdDraw.clear();
-//            for (int row = 0; row < size; row++) {
-//                for (int col = 0; col < size; col++) {
-//                    if (curGen[row*size + col] == true) {
-//                        StdDraw.point(col, row);
-//                    }
-//                }
-//            }
-//            StdDraw.show(0);
+            StdDraw.show(0);
+            StdDraw.clear();
+            for (int row = 0; row < size; row++) {
+                for (int col = 0; col < size; col++) {
+                    if (curGen[row][col] == true) {
+                        StdDraw.point(col, row);
+                    }
+                }
+            }
+            StdDraw.show(0);
             System.out.println(System.currentTimeMillis() - time + "ms, iterations left: " + iterations);
             time = System.currentTimeMillis();
         }
@@ -87,7 +87,7 @@ public class GameOfLifeImpl implements GameOfLife {
         for (int i = 0; i < size; i++) {
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < size; j++) {
-                if (curGen[i*size+j]) sb.append("1");
+                if (curGen[i][j]) sb.append("1");
                 else sb.append("0");
             }
             returnvalue.add(sb.toString());
@@ -97,12 +97,16 @@ public class GameOfLifeImpl implements GameOfLife {
         return returnvalue;
     }
 
-    int parallelevel = 100;
-    public Boolean[] countNextGen(int rowsNum, int colsNum) {
-
-        nextGen = new Boolean[rowsNum*colsNum];
-        System.arraycopy( curGen, 0, nextGen, 0, rowsNum*colsNum );
-
+    int parallelevel = 1;
+    public Boolean[][] countNextGen(int rowsNum, int colsNum) {
+        nextGen = new Boolean[rowsNum][];
+        for(int i = 0; i < rowsNum; i++)
+        {
+            Boolean[] aMatrix = curGen[i];
+            int   aLength = aMatrix.length;
+            nextGen[i] = new Boolean[aLength];
+            System.arraycopy(aMatrix, 0, nextGen[i], 0, aLength);
+        }
 
         SubUpdateThread[] subUpdaters = new SubUpdateThread[rowsNum/parallelevel + 1];
         for(int i = 0; i < rowsNum/parallelevel + 1; i++){
@@ -121,30 +125,30 @@ public class GameOfLifeImpl implements GameOfLife {
     }
 
 
-    public static int countCellNeighbours(Boolean[] curGen, int rowsNum, int colsNum, int row, int col) {
+    public static int countCellNeighbours(Boolean[][] curGen, int rowsNum, int colsNum, int row, int col) {
         int numOfNeighbours = 0;
-        if (curGen[((row - 1+rowsNum)%rowsNum)*colsNum + (col - 1+colsNum)%colsNum]) {
+        if (curGen[((row - 1+rowsNum)%rowsNum)][(col - 1+colsNum)%colsNum]) {
             numOfNeighbours++;
         }
-        if (curGen[((row - 1+rowsNum)%rowsNum)*colsNum + col]) {
+        if (curGen[((row - 1+rowsNum)%rowsNum)][col]) {
             numOfNeighbours++;
         }
-        if (curGen[((row - 1+rowsNum)%rowsNum)*colsNum + (col + 1)%colsNum]) {
+        if (curGen[((row - 1+rowsNum)%rowsNum)][(col + 1)%colsNum]) {
             numOfNeighbours++;
         }
-        if (curGen[row*colsNum + (col - 1+colsNum)%colsNum]) {
+        if (curGen[row][(col - 1+colsNum)%colsNum]) {
             numOfNeighbours++;
         }
-        if (curGen[row*colsNum + (col + 1)%colsNum]) {
+        if (curGen[row][(col + 1)%colsNum]) {
             numOfNeighbours++;
         }
-        if (curGen[((row + 1)%rowsNum)*colsNum + (col - 1+colsNum)%colsNum]) {
+        if (curGen[((row + 1)%rowsNum)][(col - 1+colsNum)%colsNum]) {
             numOfNeighbours++;
         }
-        if (curGen[((row + 1)%rowsNum)*colsNum + col]) {
+        if (curGen[((row + 1)%rowsNum)][col]) {
             numOfNeighbours++;
         }
-        if (curGen[((row + 1)%rowsNum)*colsNum + (col + 1)%colsNum]) {
+        if (curGen[((row + 1)%rowsNum)][(col + 1)%colsNum]) {
             numOfNeighbours++;
         }
 
@@ -168,17 +172,17 @@ public class GameOfLifeImpl implements GameOfLife {
 
                     // under or overpopulation, cell dies
                     if ((numOfNeighbours < 2) || (numOfNeighbours > 3)) {
-                        nextGen[row*size + col] = false;
+                        nextGen[row][col] = false;
                     }
 
                     // cell lives on to next generation
                     if (numOfNeighbours == 2) {
-                        nextGen[row*size + col] = curGen[row*size + col];
+                        nextGen[row][col] = curGen[row][col];
                     }
 
                     // cell either stays alive, or is born
                     if (numOfNeighbours == 3) {
-                        nextGen[row*size + col] = true;
+                        nextGen[row][col] = true;
                     }
                 }
             }
